@@ -4,12 +4,14 @@ import { Link, Navigate } from "react-router"
 import { EmptyState, LoadingState, QueryError } from "~/components/page-state"
 import { api, errorMessage, formatDate, type Notification, type Page, type Result } from "~/lib/api"
 import { useAuth } from "~/lib/auth"
+import { translateNotification, useTranslation } from "~/i18n"
 
 const notificationKey = ["notifications"] as const
 const unreadCountKey = ["notifications", "unread-count"] as const
 
 export default function NotificationsPage() {
   const { user, isLoading: authLoading } = useAuth()
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const notifications = useQuery({
     queryKey: notificationKey,
@@ -25,7 +27,7 @@ export default function NotificationsPage() {
   const markRead = useMutation({ mutationFn: (id: string) => api.post(`/notifications/${id}/read`), onSuccess: refreshNotifications })
   const markAll = useMutation({ mutationFn: () => api.post("/notifications/read-all"), onSuccess: refreshNotifications })
 
-  if (authLoading) return <LoadingState label="Loading notifications" />
+  if (authLoading) return <LoadingState label={t("Loading notifications")} />
   if (!user) return <Navigate to="/login?next=%2Fnotifications" replace />
 
   const unread = notifications.data?.data.filter((item) => !item.readAt).length ?? 0
@@ -34,34 +36,34 @@ export default function NotificationsPage() {
     <div className="page-container notifications-page">
       <div className="page-heading-row">
         <div>
-          <p className="section-kicker">YOUR UPDATES</p>
-          <h1>Notifications.</h1>
-          <p>Messages and milestones from your Archer workspace.</p>
+          <p className="section-kicker">{t("YOUR UPDATES")}</p>
+          <h1>{t("Notifications.")}</h1>
+          <p>{t("Messages and milestones from your Archer workspace.")}</p>
         </div>
         <div className="notification-heading-actions">
-          {notifications.isFetching && !notifications.isLoading && <span className="notification-sync-state">Updating…</span>}
-          {unread > 0 && <button className="button-outline" onClick={() => markAll.mutate()} disabled={markAll.isPending}><Check size={16} /> {markAll.isPending ? "Marking read…" : "Mark all as read"}</button>}
+          {notifications.isFetching && !notifications.isLoading && <span className="notification-sync-state">{t("Updating…")}</span>}
+          {unread > 0 && <button className="button-outline" onClick={() => markAll.mutate()} disabled={markAll.isPending}><Check size={16} /> {t(markAll.isPending ? "Marking read…" : "Mark all as read")}</button>}
         </div>
       </div>
       {mutationError && <p className="notification-error" role="alert">{errorMessage(mutationError)}</p>}
-      {notifications.isLoading ? <LoadingState label="Loading notifications" /> : notifications.isError ? <QueryError error={notifications.error} retry={() => void notifications.refetch()} /> : notifications.data?.data.length ? (
+      {notifications.isLoading ? <LoadingState label={t("Loading notifications")} /> : notifications.isError ? <QueryError error={notifications.error} retry={() => void notifications.refetch()} /> : notifications.data?.data.length ? (
         <div className="notification-list">
           {notifications.data.data.map((item) => {
             const href = notificationHref(item, user)
             return <article className={item.readAt ? "notification-row" : "notification-row unread"} key={item.id}>
               <span className="notification-icon"><Bell size={19} weight="duotone" /></span>
               <Link className="notification-copy" to={href} onClick={() => { if (!item.readAt) markRead.mutate(item.id) }}>
-                <p>{item.message}</p>
-                <span>{formatDate(item.createdAt)} · {item.type.replaceAll("_", " ")}</span>
+                <p>{translateNotification(item.type, item.message, t)}</p>
+                <span>{formatDate(item.createdAt)} · {t(item.type.replaceAll("_", " "))}</span>
               </Link>
               <div className="notification-actions">
-                {!item.readAt && <button className="text-button" onClick={() => markRead.mutate(item.id)} disabled={markRead.isPending}>Mark read</button>}
-                <Link to={href} onClick={() => { if (!item.readAt) markRead.mutate(item.id) }} aria-label={`Open notification: ${item.message}`}><ArrowRight size={17} /></Link>
+                {!item.readAt && <button className="text-button" onClick={() => markRead.mutate(item.id)} disabled={markRead.isPending}>{t("Mark read")}</button>}
+                <Link to={href} onClick={() => { if (!item.readAt) markRead.mutate(item.id) }} aria-label={`${t("Notifications")}: ${translateNotification(item.type, item.message, t)}`}><ArrowRight size={17} /></Link>
               </div>
             </article>
           })}
         </div>
-      ) : <EmptyState title="You’re all caught up" description="Project messages and important milestones will show up here." action={<Link to="/projects" className="button-outline">Open projects <ArrowRight size={16} /></Link>} />}
+      ) : <EmptyState title={t("You’re all caught up")} description={t("Project messages and important milestones will show up here.")} action={<Link to="/projects" className="button-outline">{t("Open projects")} <ArrowRight size={16} /></Link>} />}
     </div>
   )
 }

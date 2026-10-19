@@ -36,5 +36,6 @@ npm run build
 - Participant projects with status actions, messages, and post-completion reviews
 - In-app notification list and read actions
 - USD and MMK presentation, with no currency conversion or payment processing
+- English and Burmese interface text, selected from the header and saved in the browser
 
 The API is the source of truth for permissions and lifecycle rules. Configure its CORS allowlist to include the Vite development origin when using a non-default port.

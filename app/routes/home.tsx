@@ -5,6 +5,7 @@ import { Button } from "~/components/ui/button"
 import { JobCard } from "~/components/job-card"
 import { api, type Job, type Page } from "~/lib/api"
 import { LoadingState } from "~/components/page-state"
+import { useTranslation } from "~/i18n"
 
 const categories = [
   { title: "Development", detail: "Web, mobile & software", icon: Code, color: "sage" },
@@ -14,6 +15,7 @@ const categories = [
 ]
 
 export default function Home() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const featured = useQuery({ queryKey: ["jobs", "featured"], queryFn: () => api.get<Page<Job>>("/jobs?limit=3") })
   function search(event: React.FormEvent<HTMLFormElement>) {
@@ -27,15 +29,15 @@ export default function Home() {
       <section className="hero-wrap">
         <div className="hero container-wide">
           <div className="hero-copy">
-            <div className="eyebrow"><span className="eyebrow-dot" /> YOUR NEXT CHAPTER STARTS HERE</div>
-            <h1>Good work finds<br /><em>good people.</em></h1>
-            <p className="hero-intro">Archer brings ambitious clients and independent talent together. Find meaningful work, or find the person who can make it happen.</p>
+            <div className="eyebrow"><span className="eyebrow-dot" /> {t("YOUR NEXT CHAPTER STARTS HERE")}</div>
+            <h1>{t("Good work finds")}<br /><em>{t("good people.")}</em></h1>
+            <p className="hero-intro">{t("Archer brings ambitious clients and independent talent together. Find meaningful work, or find the person who can make it happen.")}</p>
             <form className="hero-search" onSubmit={search}>
               <span className="search-icon"><Compass size={21} weight="duotone" /></span>
-              <input name="q" placeholder="Try “brand design” or “React developer”" aria-label="Search jobs and skills" />
-              <Button type="submit" size="lg">Explore work <ArrowRight size={17} /></Button>
+              <input name="q" placeholder={t("Try “brand design” or “React developer”")} aria-label={t("Search jobs and skills")} />
+              <Button type="submit" size="lg">{t("Explore work")} <ArrowRight size={17} /></Button>
             </form>
-            <div className="hero-trust"><span className="avatar-stack"><i>A</i><i>M</i><i>K</i><i>+</i></span><span>Built for people who care about their craft</span></div>
+            <div className="hero-trust"><span className="avatar-stack"><i>A</i><i>M</i><i>K</i><i>+</i></span><span>{t("Built for people who care about their craft")}</span></div>
           </div>
           <div className="hero-art" aria-label="Archer marketplace snapshot">
             <div className="hero-orbit orbit-one" /><div className="hero-orbit orbit-two" />
@@ -47,19 +49,19 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="trust-strip"><div className="container-wide trust-inner"><span><Check size={16} /> No payment integration required</span><span><Check size={16} /> Your work, your terms</span><span><Check size={16} /> USD and MMK budgets</span><span><Check size={16} /> A community built on trust</span></div></section>
+      <section className="trust-strip"><div className="container-wide trust-inner"><span><Check size={16} /> {t("No payment integration required")}</span><span><Check size={16} /> {t("Your work, your terms")}</span><span><Check size={16} /> {t("USD and MMK budgets")}</span><span><Check size={16} /> {t("A community built on trust")}</span></div></section>
 
       <section className="section container-wide" id="how-it-works">
-        <div className="section-heading"><div><p className="section-kicker">START WITH WHAT YOU NEED</p><h2>Make room for <em>great work.</em></h2></div><Link className="text-link" to="/jobs">Browse all work <ArrowRight size={16} /></Link></div>
-        <div className="category-grid">{categories.map(({ title, detail, icon: Icon, color }) => <Link className="category-card" to={`/jobs?category=${encodeURIComponent(title)}`} key={title}><span className={`category-icon ${color}`}><Icon size={22} weight="duotone" /></span><strong>{title}</strong><span>{detail}</span><ArrowUpRight className="category-arrow" size={18} /></Link>)}</div>
+        <div className="section-heading"><div><p className="section-kicker">{t("START WITH WHAT YOU NEED")}</p><h2>{t("Make room for")} <em>{t("great work.")}</em></h2></div><Link className="text-link" to="/jobs">{t("Browse all work")} <ArrowRight size={16} /></Link></div>
+        <div className="category-grid">{categories.map(({ title, detail, icon: Icon, color }) => <Link className="category-card" to={`/jobs?category=${encodeURIComponent(title)}`} key={title}><span className={`category-icon ${color}`}><Icon size={22} weight="duotone" /></span><strong>{title}</strong><span>{t(detail)}</span><ArrowUpRight className="category-arrow" size={18} /></Link>)}</div>
       </section>
 
       <section className="section featured-section"><div className="container-wide">
-        <div className="section-heading"><div><p className="section-kicker">FRESH OPPORTUNITIES</p><h2>Work worth <em>doing.</em></h2></div><Link className="text-link" to="/jobs">See all opportunities <ArrowRight size={16} /></Link></div>
-        {featured.isLoading ? <LoadingState label="Finding fresh opportunities" /> : featured.isError ? <p className="muted-copy">We couldn’t reach the marketplace right now. Try again in a moment.</p> : <div className="featured-grid">{featured.data?.data.slice(0, 3).map((job) => <JobCard compact key={job.id} job={job} />)}</div>}
+        <div className="section-heading"><div><p className="section-kicker">{t("FRESH OPPORTUNITIES")}</p><h2>{t("Work worth")} <em>{t("doing.")}</em></h2></div><Link className="text-link" to="/jobs">{t("See all opportunities")} <ArrowRight size={16} /></Link></div>
+        {featured.isLoading ? <LoadingState label={t("Finding fresh opportunities")} /> : featured.isError ? <p className="muted-copy">{t("We couldn’t reach the marketplace right now. Try again in a moment.")}</p> : <div className="featured-grid">{featured.data?.data.slice(0, 3).map((job) => <JobCard compact key={job.id} job={job} />)}</div>}
       </div></section>
 
-      <section className="cta-section container-wide"><div className="cta-panel"><div className="cta-decoration">A<span>.</span></div><div><p className="section-kicker">GOOD THINGS START WITH A CONVERSATION</p><h2>Ready to find your <em>next match?</em></h2><p>Bring your skills, bring your brief. There’s room for both sides on Archer.</p></div><div className="cta-actions"><Link className="button-primary" to="/register">Join Archer <ArrowRight size={17} /></Link><Link to="/jobs" className="cta-secondary">Explore jobs <ArrowUpRight size={16} /></Link></div></div></section>
+      <section className="cta-section container-wide"><div className="cta-panel"><div className="cta-decoration">A<span>.</span></div><div><p className="section-kicker">{t("GOOD THINGS START WITH A CONVERSATION")}</p><h2>{t("Ready to find your")} <em>{t("next match?")}</em></h2><p>{t("Bring your skills, bring your brief. There’s room for both sides on Archer.")}</p></div><div className="cta-actions"><Link className="button-primary" to="/register">{t("Join Archer")} <ArrowRight size={17} /></Link><Link to="/jobs" className="cta-secondary">{t("Explore jobs")} <ArrowUpRight size={16} /></Link></div></div></section>
     </>
   )
 }
