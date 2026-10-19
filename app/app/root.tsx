@@ -9,6 +9,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { AuthProvider } from "~/lib/auth"
 import { LanguageProvider } from "~/i18n"
+import { ThemeProvider } from "~/lib/theme"
 
 import type { Route } from "./+types/root"
 import "./app.css"
@@ -23,6 +24,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem("archer.theme")==="dark"){document.documentElement.classList.add("dark");document.documentElement.style.colorScheme="dark"}}catch{}` }} />
         <Meta />
         <Links />
       </head>
@@ -36,7 +38,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <QueryClientProvider client={queryClient}><LanguageProvider><AuthProvider><Outlet /></AuthProvider></LanguageProvider></QueryClientProvider>
+  return <QueryClientProvider client={queryClient}><ThemeProvider><LanguageProvider><AuthProvider><Outlet /></AuthProvider></LanguageProvider></ThemeProvider></QueryClientProvider>
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

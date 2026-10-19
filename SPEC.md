@@ -72,6 +72,7 @@ One account may use both client and freelancer features. Each role's private act
 
 - Web and mobile layouts support their common screen sizes and interaction patterns.
 - The web experience is available in English and Burmese. Users can switch languages from the site header, and their choice is saved for later visits.
+- The web experience supports light and dark themes. Users can switch themes from the site header, and their choice is saved for later visits.
 - The API localizes supported user-facing errors according to the request's `Accept-Language` header; English is the fallback.
 - Forms and actions communicate validation errors and recovery steps. Changes that fail are not reported as successful.
 - Controls are keyboard-usable and screen-reader labeled where the platform supports it; text and controls have usable contrast.

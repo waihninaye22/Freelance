@@ -12,7 +12,7 @@ This repository is Archer's monorepo. Each project remains self-contained:
 
 Each project owns its dependencies, setup, build, and release process. There is no root package workspace or shared runtime code; clients communicate with the API over its versioned HTTP contract.
 
-The web app supports English and Burmese. Choose a language from the app header; the selection is saved in the browser.
+The web app supports English and Burmese, plus light and dark themes. Choose language and theme from the app header; both selections are saved in the browser.
 
 ## Run locally
 

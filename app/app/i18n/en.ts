@@ -17,6 +17,8 @@ const en = {
   "Language": "Language",
   "English": "English",
   "Burmese": "Burmese",
+  "Switch to dark mode": "Switch to dark mode",
+  "Switch to light mode": "Switch to light mode",
   "THE MARKETPLACE": "THE MARKETPLACE",
   "Find work that": "Find work that",
   "Thoughtful projects from people who value what you do.": "Thoughtful projects from people who value what you do.",

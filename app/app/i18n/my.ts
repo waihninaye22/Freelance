@@ -17,6 +17,8 @@ const my = {
   "Language": "ဘာသာစကား",
   "English": "English",
   "Burmese": "မြန်မာဘာသာ",
+  "Switch to dark mode": "Dark mode ဖွင့်ရန်",
+  "Switch to light mode": "Light mode ဖွင့်ရန်",
   "THE MARKETPLACE": "အလုပ်အကိုင်ဈေးကွက်",
   "Find work that": "သင့်တော်သောအလုပ်ကို",
   "Thoughtful projects from people who value what you do.": "သင့်အလုပ်ကို တန်ဖိုးထားသူများထံမှ ရည်ရွယ်ချက်ရှိသော ပရောဂျက်များ။",

@@ -1,14 +1,16 @@
 import { Link, NavLink, Outlet } from "react-router"
-import { ArrowRight, Bell, Briefcase, CaretDown, Compass, Flag, List, SignOut, UserCircle } from "@phosphor-icons/react"
+import { ArrowRight, Bell, Briefcase, CaretDown, Compass, Flag, List, Moon, SignOut, Sun, UserCircle } from "@phosphor-icons/react"
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useAuth } from "~/lib/auth"
 import { api, type Result } from "~/lib/api"
 import { useTranslation } from "~/i18n"
+import { useTheme } from "~/lib/theme"
 
 export function AppShell() {
   const { user, signOut } = useAuth()
   const { language, setLanguage, t } = useTranslation()
+  const { theme, toggleTheme } = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
   const unread = useQuery({
     queryKey: ["notifications", "unread-count"],
@@ -32,6 +34,9 @@ export function AppShell() {
           </nav>
           <div className="header-actions">
             <label className="language-picker"><span className="sr-only">{t("Language")}</span><select value={language} onChange={(event) => setLanguage(event.target.value as "en" | "my")} aria-label={t("Language")}><option value="en">EN</option><option value="my">မြန်မာ</option></select></label>
+            <button className="icon-button theme-toggle" type="button" onClick={toggleTheme} aria-label={t(theme === "dark" ? "Switch to light mode" : "Switch to dark mode")} title={t(theme === "dark" ? "Switch to light mode" : "Switch to dark mode")} aria-pressed={theme === "dark"}>
+              {theme === "dark" ? <Sun size={20} weight="regular" /> : <Moon size={20} weight="regular" />}
+            </button>
             {user ? (
               <>
                 <Link to="/notifications" className="icon-button notification-trigger" aria-label={t("Notifications")}>
