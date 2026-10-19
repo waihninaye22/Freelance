@@ -1,0 +1,3 @@
+interface:
+  display_name: "Burmese I18n"
+  short_description: "Language-aware English and Burmese UI for Archer"
