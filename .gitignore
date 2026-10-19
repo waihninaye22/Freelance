@@ -1,0 +1,12 @@
+.DS_Store
+**/node_modules/
+**/.env
+**/.env.*
+!**/.env.example
+**/*.db
+**/*.db-journal
+app/build/
+app/.react-router/
+api/dist/
+api/src/generated/
+**/*.tsbuildinfo
