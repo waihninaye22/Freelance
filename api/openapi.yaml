@@ -1,0 +1,496 @@
+openapi: 3.1.0
+info:
+  title: Archer API
+  version: 0.1.0
+  description: REST API for the Archer freelance marketplace. Amounts are integer minor units: USD cents and MMK whole kyat. Send Accept-Language: my-MM for supported Burmese error messages; English is the default and fallback.
+servers:
+  - url: http://localhost:4000/api/v1
+tags:
+  - name: Auth
+  - name: Profiles
+  - name: Catalog
+  - name: Jobs
+  - name: Proposals
+  - name: Projects
+  - name: Notifications
+  - name: Saved jobs
+  - name: Reports and admin
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a marketplace account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string, minLength: 2, maxLength: 80 }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 10 }
+                roles: { type: array, items: { enum: [freelancer, client] }, default: [freelancer] }
+      responses:
+        "201": { description: Account created with bearer access token }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "409": { $ref: "#/components/responses/Conflict" }
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Sign in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        "200": { description: Signed in with bearer access token }
+        "401": { description: Invalid credentials }
+  /auth/me:
+    get:
+      tags: [Auth]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Current account and profiles }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Client should discard its stateless access token }
+  /profiles/{userId}:
+    get:
+      tags: [Profiles]
+      parameters: [{ $ref: "#/components/parameters/userId" }]
+      responses:
+        "200": { description: Public profile }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /profiles/me:
+    patch:
+      tags: [Profiles]
+      security: [{ bearerAuth: [] }]
+      summary: Update account and either marketplace profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                freelancer:
+                  type: object
+                  properties:
+                    headline: { type: [string, "null"] }
+                    bio: { type: [string, "null"] }
+                    hourlyRateMinor: { type: [integer, "null"], minimum: 0 }
+                    rateCurrency: { $ref: "#/components/schemas/Currency" }
+                    skills: { type: array, items: { type: string } }
+                client:
+                  type: object
+                  properties:
+                    displayName: { type: string }
+                    description: { type: [string, "null"] }
+                    location: { type: [string, "null"] }
+      responses:
+        "200": { description: Updated profile }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /catalog/categories:
+    get:
+      tags: [Catalog]
+      responses:
+        "200": { description: Available job categories }
+  /catalog/skills:
+    get:
+      tags: [Catalog]
+      responses:
+        "200": { description: Known skills }
+  /jobs:
+    get:
+      tags: [Jobs]
+      summary: Search open jobs
+      parameters:
+        - { name: q, in: query, schema: { type: string } }
+        - { name: categoryId, in: query, schema: { type: string } }
+        - { name: skill, in: query, schema: { type: string } }
+        - { name: currency, in: query, schema: { $ref: "#/components/schemas/Currency" } }
+        - { name: budgetType, in: query, schema: { enum: [fixed, hourly] } }
+        - { name: experienceLevel, in: query, schema: { enum: [entry, intermediate, expert] } }
+        - { $ref: "#/components/parameters/page" }
+        - { $ref: "#/components/parameters/limit" }
+      responses:
+        "200": { description: Paginated open job listings }
+    post:
+      tags: [Jobs]
+      security: [{ bearerAuth: [] }]
+      summary: Create a draft job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JobInput" }
+      responses:
+        "201": { description: Created job }
+        "403": { description: Client profile required }
+  /jobs/{jobId}:
+    parameters: [{ $ref: "#/components/parameters/jobId" }]
+    get:
+      tags: [Jobs]
+      responses:
+        "200": { description: Job details }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      tags: [Jobs]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/JobPatchInput" }
+      responses:
+        "200": { description: Updated job }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    delete:
+      tags: [Jobs]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Deleted draft or paused job }
+  /jobs/{jobId}/publish:
+    post:
+      tags: [Jobs]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/jobId" }]
+      responses:
+        "200": { description: Job published }
+  /jobs/{jobId}/pause:
+    post:
+      tags: [Jobs]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/jobId" }]
+      responses:
+        "200": { description: Job paused }
+  /jobs/{jobId}/close:
+    post:
+      tags: [Jobs]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/jobId" }]
+      responses:
+        "200": { description: Job closed }
+  /saved-jobs:
+    get:
+      tags: [Saved jobs]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/page" }, { $ref: "#/components/parameters/limit" }]
+      responses:
+        "200": { description: Paginated saved jobs }
+  /saved-jobs/{jobId}:
+    parameters: [{ $ref: "#/components/parameters/jobId" }]
+    put:
+      tags: [Saved jobs]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "201": { description: Job saved }
+    delete:
+      tags: [Saved jobs]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Job removed from saved list }
+  /jobs/{jobId}/proposals:
+    parameters: [{ $ref: "#/components/parameters/jobId" }]
+    get:
+      tags: [Proposals]
+      security: [{ bearerAuth: [] }]
+      summary: List proposals (job owner or administrator)
+      parameters: [{ $ref: "#/components/parameters/page" }, { $ref: "#/components/parameters/limit" }]
+      responses:
+        "200": { description: Paginated proposals }
+    post:
+      tags: [Proposals]
+      security: [{ bearerAuth: [] }]
+      summary: Submit a proposal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [coverMessage, amountMinor, currency]
+              properties:
+                coverMessage: { type: string, minLength: 30 }
+                amountMinor: { type: integer, minimum: 1 }
+                currency: { $ref: "#/components/schemas/Currency" }
+                estimatedDurationDays: { type: integer, minimum: 1 }
+      responses:
+        "201": { description: Proposal created }
+        "400": { description: Currency mismatch or invalid input }
+  /proposals/mine:
+    get:
+      tags: [Proposals]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/page" }, { $ref: "#/components/parameters/limit" }]
+      responses:
+        "200": { description: Current freelancer's proposals }
+  /proposals/{proposalId}:
+    patch:
+      tags: [Proposals]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: proposalId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Updated pending proposal }
+  /proposals/{proposalId}/withdraw:
+    post:
+      tags: [Proposals]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: proposalId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Proposal withdrawn }
+  /proposals/{proposalId}/shortlist:
+    post:
+      tags: [Proposals]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: proposalId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Proposal shortlisted }
+  /proposals/{proposalId}/reject:
+    post:
+      tags: [Proposals]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: proposalId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Proposal rejected }
+  /proposals/{proposalId}/hire:
+    post:
+      tags: [Proposals]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: proposalId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "201": { description: Project created and job closed }
+  /projects:
+    get:
+      tags: [Projects]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/page" }, { $ref: "#/components/parameters/limit" }]
+      responses:
+        "200": { description: Projects where the current account is a participant }
+  /projects/{projectId}:
+    get:
+      tags: [Projects]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: projectId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Project details }
+  /projects/{projectId}/submit:
+    post:
+      tags: [Projects]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: projectId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Work marked submitted }
+  /projects/{projectId}/complete:
+    post:
+      tags: [Projects]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: projectId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Project completed }
+  /projects/{projectId}/cancel:
+    post:
+      tags: [Projects]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: projectId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Cancellation requested }
+  /projects/{projectId}/messages:
+    get:
+      tags: [Projects]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: projectId, in: path, required: true, schema: { type: string } }, { $ref: "#/components/parameters/page" }]
+      responses:
+        "200": { description: Paginated project messages }
+    post:
+      tags: [Projects]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: projectId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties: { body: { type: string, minLength: 1, maxLength: 10000 } }
+      responses:
+        "201": { description: Message created }
+  /projects/{projectId}/reviews:
+    post:
+      tags: [Projects]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: projectId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rating]
+              properties: { rating: { type: integer, minimum: 1, maximum: 5 }, body: { type: string } }
+      responses:
+        "201": { description: Review created }
+  /projects/admin/{projectId}/resolve-cancellation:
+    post:
+      tags: [Projects]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: projectId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status, reason]
+              properties: { status: { enum: [active, submitted, cancelled] }, reason: { type: string } }
+      responses:
+        "200": { description: Cancellation request resolved by an administrator }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /notifications:
+    get:
+      tags: [Notifications]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: "#/components/parameters/page" }, { $ref: "#/components/parameters/limit" }]
+      responses:
+        "200": { description: Current account's notifications, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: "#/components/schemas/Notification" } }, pagination: { type: object } } } } } }
+  /notifications/unread-count:
+    get:
+      tags: [Notifications]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: Number of unread notifications, content: { application/json: { schema: { type: object, properties: { data: { type: object, properties: { unreadCount: { type: integer, minimum: 0 } } } } } } } }
+  /notifications/{notificationId}/read:
+    post:
+      tags: [Notifications]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: notificationId, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Notification marked read }
+  /notifications/read-all:
+    post:
+      tags: [Notifications]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200": { description: All current notifications marked read }
+  /reports:
+    post:
+      tags: [Reports and admin]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetType, targetId, reason]
+              properties:
+                targetType: { enum: [job, profile, proposal, message] }
+                targetId: { type: string }
+                reason: { type: string }
+                details: { type: string }
+      responses:
+        "201": { description: Report submitted }
+  /reports/admin:
+    get:
+      tags: [Reports and admin]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: status, in: query, schema: { type: string } }, { $ref: "#/components/parameters/limit" }]
+      responses:
+        "200": { description: Admin moderation queue }
+  /reports/admin/{reportId}:
+    patch:
+      tags: [Reports and admin]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: reportId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status, resolution]
+              properties: { status: { enum: [reviewed, actioned, dismissed] }, resolution: { type: string } }
+      responses:
+        "200": { description: Report reviewed; moderation actions are audited }
+  /reports/admin/users/{userId}/suspend:
+    post:
+      tags: [Reports and admin]
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: userId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties: { reason: { type: string } }
+      responses:
+        "200": { description: Account suspended and action audited }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    userId: { name: userId, in: path, required: true, schema: { type: string } }
+    jobId: { name: jobId, in: path, required: true, schema: { type: string } }
+    page: { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+    limit: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+  schemas:
+    Currency: { type: string, enum: [USD, MMK] }
+    Notification:
+      type: object
+      required: [id, type, message, createdAt]
+      properties:
+        id: { type: string }
+        type: { type: string }
+        message: { type: string }
+        href: { type: [string, "null"] }
+        readAt: { type: [string, "null"], format: date-time }
+        createdAt: { type: string, format: date-time }
+    JobInput:
+      type: object
+      required: [title, description, categoryId, budgetType, currency]
+      properties:
+        title: { type: string, minLength: 8, maxLength: 140 }
+        description: { type: string, minLength: 30, maxLength: 10000 }
+        categoryId: { type: string }
+        budgetType: { type: string, enum: [fixed, hourly] }
+        minAmountMinor: { type: [integer, "null"], minimum: 1 }
+        maxAmountMinor: { type: [integer, "null"], minimum: 1 }
+        currency: { $ref: "#/components/schemas/Currency" }
+        experienceLevel: { type: [string, "null"], enum: [entry, intermediate, expert, null] }
+        skills: { type: array, items: { type: string } }
+    JobPatchInput:
+      type: object
+      properties:
+        title: { type: string, minLength: 8, maxLength: 140 }
+        description: { type: string, minLength: 30, maxLength: 10000 }
+        categoryId: { type: string }
+        budgetType: { type: string, enum: [fixed, hourly] }
+        minAmountMinor: { type: [integer, "null"], minimum: 1 }
+        maxAmountMinor: { type: [integer, "null"], minimum: 1 }
+        currency: { $ref: "#/components/schemas/Currency" }
+        experienceLevel: { type: [string, "null"], enum: [entry, intermediate, expert, null] }
+        skills: { type: array, items: { type: string } }
+  responses:
+    BadRequest: { description: Invalid request body or parameters }
+    Unauthorized: { description: Missing or invalid access token }
+    Forbidden: { description: Authenticated account lacks permission }
+    NotFound: { description: Resource not found }
+    Conflict: { description: Duplicate value or invalid resource state }
