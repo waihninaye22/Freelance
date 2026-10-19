@@ -46,6 +46,8 @@ All API amounts use integer `*Minor` fields. USD amounts are cents; MMK amounts 
 
 Responses use `{ "data": ... }`, paginated lists include `pagination`, and errors use `{ "error": { "code", "message", "details?" } }`. The API contract is in `openapi.yaml`.
 
+Error messages support Burmese when a client sends `Accept-Language: my-MM`; English is the default and fallback. Request validation details may still contain English Zod messages.
+
 ## Demo accounts
 
 The seed script creates local demo accounts. Their shared development password and account list are documented in `prisma/seed.ts`. Never reuse those credentials outside local development.

@@ -1,5 +1,6 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express";
 import { ZodError } from "zod";
+import { localizedMessage, requestLocale } from "./i18n.js";
 
 export class HttpError extends Error {
   constructor(public status: number, message: string, public code = "REQUEST_FAILED") {
@@ -10,18 +11,20 @@ export class HttpError extends Error {
 export const asyncHandler = (fn: (req: Request, res: Response) => Promise<unknown>): RequestHandler =>
   (req, res, next) => { void fn(req, res).catch(next); };
 
-export function errorHandler(error: unknown, _req: Request, res: Response, _next: NextFunction) {
+export function errorHandler(error: unknown, req: Request, res: Response, _next: NextFunction) {
+  const locale = requestLocale(req.header("accept-language"));
+  res.vary("Accept-Language");
   if (error instanceof ZodError) {
-    return res.status(400).json({ error: { code: "VALIDATION_ERROR", message: "Request validation failed", details: error.flatten() } });
+    return res.status(400).json({ error: { code: "VALIDATION_ERROR", message: localizedMessage("Request validation failed", locale), details: error.flatten() } });
   }
   if (error instanceof HttpError) {
-    return res.status(error.status).json({ error: { code: error.code, message: error.message } });
+    return res.status(error.status).json({ error: { code: error.code, message: localizedMessage(error.message, locale) } });
   }
   const dbCode = (error as { code?: string })?.code;
-  if (dbCode === "P2002") return res.status(409).json({ error: { code: "CONFLICT", message: "A record with that value already exists" } });
-  if (dbCode === "P2025") return res.status(404).json({ error: { code: "NOT_FOUND", message: "Record not found" } });
+  if (dbCode === "P2002") return res.status(409).json({ error: { code: "CONFLICT", message: localizedMessage("A record with that value already exists", locale) } });
+  if (dbCode === "P2025") return res.status(404).json({ error: { code: "NOT_FOUND", message: localizedMessage("Record not found", locale) } });
   console.error(error);
-  return res.status(500).json({ error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" } });
+  return res.status(500).json({ error: { code: "INTERNAL_ERROR", message: localizedMessage("An unexpected error occurred", locale) } });
 }
 
 export function parsePagination(query: Request["query"]) {

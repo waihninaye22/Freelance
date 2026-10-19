@@ -4,6 +4,7 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { errorHandler } from "./lib/http.js";
+import { localizedMessage, requestLocale } from "./lib/i18n.js";
 import { authRouter } from "./routes/auth.js";
 import { profilesRouter } from "./routes/profiles.js";
 import { catalogRouter } from "./routes/catalog.js";
@@ -23,7 +24,7 @@ app.use(cors({ origin: (origin, callback) => callback(null, !origin || allowedOr
 app.use(express.json({ limit: "1mb" }));
 app.get("/health", (_req, res) => res.json({ data: { status: "ok", service: "archer-api" } }));
 
-const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-7", legacyHeaders: false, message: { error: { code: "RATE_LIMITED", message: "Too many authentication attempts. Try again later." } } });
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20, standardHeaders: "draft-7", legacyHeaders: false, handler: (req, res) => { res.vary("Accept-Language").status(429).json({ error: { code: "RATE_LIMITED", message: localizedMessage("Too many authentication attempts. Try again later.", requestLocale(req.header("accept-language"))) } }); } });
 const api = express.Router();
 api.use("/auth/register", authLimiter);
 api.use("/auth/login", authLimiter);
@@ -38,5 +39,5 @@ api.use("/saved-jobs", savedJobsRouter);
 api.use("/reports", reportsRouter);
 app.use("/api/v1", api);
 
-app.use((_req, res) => res.status(404).json({ error: { code: "NOT_FOUND", message: "Route not found" } }));
+app.use((req, res) => res.vary("Accept-Language").status(404).json({ error: { code: "NOT_FOUND", message: localizedMessage("Route not found", requestLocale(req.header("accept-language"))) } }));
 app.use(errorHandler);
